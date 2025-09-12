@@ -18,12 +18,36 @@ class ApiE2ETest {
     }
 
     @Test
-    fun `ping endpoint should return pong`() {
-        get("/ping")
-            .then()
-            .statusCode(200)
-            .body(equalTo("pong"))
-    }
+
+fun `authenticated flow with JWT token`() {
+
+    // Paso 1: obtener token
+    val token = given()
+        .contentType("application/json")
+        .body("""{"username":"admin","password":"secret"}""")
+        .post("/login")
+        .then()
+        .statusCode(200)
+        .extract()
+        .path("token")
+    
+    // Paso 2: usar token para acceder a /ping
+    given()
+        .header("Authorization", "Bearer $token")
+        .get("/ping")
+        .then()
+        .statusCode(200)
+        .body(equalTo("pong"))
+
+    // Paso 3: usar token para enviar datos a /echo
+    given()
+        .header("Authorization", "Bearer $token")
+        .body("hello with token")
+        .post("/echo")
+        .then()
+        .statusCode(200)
+        .body(equalTo("Received: hello with token"))
+}
 
     @Test
     fun `echo endpoint should return received body`() {
@@ -33,16 +57,6 @@ class ApiE2ETest {
             .then()
             .statusCode(200)
             .body(equalTo("Received: hello"))
-    }
-
-    @Test
-    fun `login endpoint should authenticate`() {
-        given()
-            .auth().preemptive().basic("admin", "secret")
-            .post("/login")
-            .then()
-            .statusCode(200)
-            .body(equalTo("Authenticated as admin"))
     }
 
     @Test

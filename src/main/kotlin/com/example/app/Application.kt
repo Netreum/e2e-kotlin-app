@@ -10,9 +10,16 @@ import io.ktor.server.routing.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.plugins.statuspages.*
-import io.ktor.server.auth.*
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
+import io.ktor.server.auth.jwt.*
 
 fun main() {
+    val jwtIssuer = "ktor.io"
+    val jwtAudience = "ktor-audience"
+    val jwtRealm = "ktor sample app"
+    val jwtSecret = "my-super-secret"
+
     embeddedServer(Netty, port = 8080) {
         install(ContentNegotiation) {
             json()
@@ -32,19 +39,53 @@ fun main() {
                 }
             }
         }
-        routing {
-            authenticate("auth-basic") {
-                get("/ping") {
-                    call.respondText("pong")
-                }
-                post("/echo") {
-                    val body = call.receive<String>()
-                    call.respondText("Received: $body")
-                }
-                post("/login") {
-                    call.respondText("Authenticated as ${call.principal<UserIdPrincipal>()?.name}")
-                }
-            }
+        install(Authentication) {
+            jwt("auth-jwt") {
+                realm = jwtRealm
+                verifier(
+                JWT
+                .require(Algorithm.HMAC256(jwtSecret))
+                .withAudience(jwtAudience)
+                .withIssuer(jwtIssuer)
+                .build()
+        )
+        validate { credential ->
+            if (credential.payload.getClaim("username").asString() != "") {
+                JWTPrincipal(credential.payload)
+            } else null
         }
-    }.start(wait = true)
+    }
+}
+       routing {
+            post("/login") {
+                val credentials = call.receive>()
+                val username = credentials["username"]
+                val password = credentials["password"]
+                if (username == "admin" && password == "secret") {
+                    val token = generateToken(username)
+                    call.respond(mapOf("token" to token))
+                } else {
+                    call.respondText("Invalid credentials", status = HttpStatusCode.Unauthorized)
+                }
+    }
+
+        authenticate("auth-jwt") {
+            get("/ping") {
+                call.respondText("pong")
+        }
+            post("/echo") {
+                val body = call.receive()
+                call.respondText("Received: $body")
+        }
+    }
+
+}
+    }
+    fun generateToken(username: String): String {
+        return JWT.create()
+        .withAudience(jwtAudience)
+        .withIssuer(jwtIssuer)
+        .withClaim("username", username)
+        .sign(Algorithm.HMAC256(jwtSecret))
+}
 }
