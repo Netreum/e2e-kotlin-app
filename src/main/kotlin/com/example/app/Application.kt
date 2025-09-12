@@ -1,4 +1,3 @@
-
 package com.example.app
 
 import io.ktor.server.engine.*
@@ -13,13 +12,14 @@ import io.ktor.server.plugins.statuspages.*
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.auth.jwt.*
 import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.JWTPrincipal
+import io.ktor.server.auth.jwt.jwt
 
-val jwtIssuer = "ktor.io"
-val jwtAudience = "ktor-audience"
-val jwtRealm = "ktor sample app"
-val jwtSecret = "my-super-secret"
+const val jwtIssuer = "ktor.io"
+const val jwtAudience = "ktor-audience"
+const val jwtRealm = "ktor sample app"
+const val jwtSecret = "my-super-secret"
 
 fun main() {
     embeddedServer(Netty, port = 8080) {
@@ -27,8 +27,8 @@ fun main() {
             json()
         }
         install(StatusPages) {
-            exception<Throwable> { call, cause ->
-                call.respondText("Error: ${cause.message}", status = io.ktor.http.HttpStatusCode.InternalServerError)
+            exception<Throwable> { call: ApplicationCall, cause: Throwable ->
+                call.respondText("Error: ${cause.message}", status = HttpStatusCode.InternalServerError)
             }
         }
         install(Authentication) {
@@ -40,25 +40,23 @@ fun main() {
                     } else null
                 }
             }
-        }
-        install(Authentication) {
             jwt("auth-jwt") {
                 realm = jwtRealm
                 verifier(
-                JWT
-                .require(Algorithm.HMAC256(jwtSecret))
-                .withAudience(jwtAudience)
-                .withIssuer(jwtIssuer)
-                .build()
-        )
-        validate { credential ->
-            if (credential.payload.getClaim("username").asString() != "") {
-                JWTPrincipal(credential.payload)
-            } else null
+                    JWT
+                        .require(Algorithm.HMAC256(jwtSecret))
+                        .withAudience(jwtAudience)
+                        .withIssuer(jwtIssuer)
+                        .build()
+                )
+                validate { credential ->
+                    if (credential.payload.getClaim("username").asString() != "") {
+                        JWTPrincipal(credential.payload)
+                    } else null
+                }
+            }
         }
-    }
-}
-       routing {
+        routing {
             post("/login") {
                 val credentials = call.receive<Map<String,String>>()
                 val username = credentials["username"]
@@ -69,19 +67,19 @@ fun main() {
                 } else {
                     call.respondText("Invalid credentials", status = HttpStatusCode.Unauthorized)
                 }
-    }
+            }
 
-        authenticate("auth-jwt") {
-            get("/ping") {
-                call.respondText("pong")
+            authenticate("auth-jwt") {
+                get("/ping") {
+                    call.respondText("pong")
+                }
+                post("/echo") {
+                    val body = call.receive<String>()
+                    call.respondText("Received: $body")
+                }
+            }
         }
-            post("/echo") {
-                val body = call.receive<String>()
-                call.respondText("Received: $body")
-        }
-    }
-}
-    }
+    }.start(wait = true)
 }
 fun generateToken(username: String): String {
     return JWT.create()

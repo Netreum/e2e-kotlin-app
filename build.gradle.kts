@@ -1,6 +1,6 @@
 
 plugins {
-    kotlin("jvm") version "1.9.0"
+    kotlin("jvm") version "2.1.0"
     application
 }
 
@@ -9,13 +9,13 @@ repositories {
 }
 
 dependencies {
-    implementation("io.ktor:ktor-server-netty:2.3.4")
-    implementation("io.ktor:ktor-server-core:2.3.4")
-    implementation("io.ktor:ktor-server-status-pages:2.3.4")
-    implementation("io.ktor:ktor-server-content-negotiation:2.3.4")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.4")
-    implementation("io.ktor:ktor-server-auth:2.3.4")
-    implementation("io.ktor:ktor-server-auth-jwt:2.3.4")
+    implementation("io.ktor:ktor-server-netty:3.1.0")
+    implementation("io.ktor:ktor-server-core:3.1.0")
+    implementation("io.ktor:ktor-server-status-pages:3.1.0")
+    implementation("io.ktor:ktor-server-content-negotiation:3.1.0")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:3.1.0")
+    implementation("io.ktor:ktor-server-auth:3.1.0")
+    implementation("io.ktor:ktor-server-auth-jwt:3.1.0")
     implementation("com.auth0:java-jwt:4.4.0")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
