@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.BeforeAll
 import org.hamcrest.Matchers.equalTo
 
-class ApiE2ETest {
+class ApiE2ETest : BaseTest(){
 
     companion object {
         var generalToken = ""
@@ -28,7 +28,7 @@ class ApiE2ETest {
     }
 
     @Test
-    fun `authenticated flow with JWT token`() {
+    fun `Acceso a endpoint protegido con token valido`() {
 
     // Paso 1: obtener token
     val token = given()
@@ -51,7 +51,7 @@ class ApiE2ETest {
 }
 
     @Test
-    fun `echo endpoint should return received body`() {
+    fun `Envio de datos a endpoint protegido`() {
         given()
             .header("Authorization", "Bearer $generalToken")
             .body("hello with token")
@@ -62,12 +62,32 @@ class ApiE2ETest {
     }
 
     @Test
-    fun `login endpoint should fail with wrong credentials`() {
+    fun `Login con credenciales invalidas`() {
         given()
             .contentType("application/json")
             .body("""{"username":"admin2","password":"secret2"}""")
             .post("/login")
             .then()
             .statusCode(401)
+            .body(equalTo("Invalid credentials"))
     }
+
+    @Test
+    fun `Envio de datos con body vacio`() {
+        given()
+            .header("Authorization", "Bearer $generalToken")
+            .post("/echo")
+            .then()
+            .statusCode(200)
+            .body(equalTo("Received: "))
+    }
+
+    @Test
+    fun `Acceso a endpoint protegido sin token`() {
+        given()
+            .get("/ping")
+            .then()
+            .statusCode(401)
+    }
+
 }
